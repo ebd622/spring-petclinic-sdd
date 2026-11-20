@@ -1,0 +1,534 @@
+openapi: 3.1.1
+info:
+  title: Spring PetClinic API
+  version: 1.0.0
+  description: >
+    Versioned clinic operations for frontend applications and API consumers. An
+    unrecognized API version returns an RFC 9457 response with code
+    UNSUPPORTED_API_VERSION.
+servers:
+  - url: /
+tags:
+  - name: Owners
+  - name: Pets
+  - name: Visits
+  - name: Veterinarians
+  - name: Pet types
+paths:
+  /api/v1/owners:
+    get:
+      tags: [Owners]
+      operationId: searchOwners
+      summary: Search owners by last-name prefix
+      parameters:
+        - $ref: '#/components/parameters/LastName'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Matching owners; an empty page is returned when there are no matches.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags: [Owners]
+      operationId: createOwner
+      summary: Create an owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerRequest'
+      responses:
+        '201':
+          description: Owner created.
+          headers:
+            Location:
+              description: URI of the created owner.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/owners/{ownerId}:
+    parameters:
+      - $ref: '#/components/parameters/OwnerId'
+    get:
+      tags: [Owners]
+      operationId: getOwner
+      summary: Get owner details, pets, and visits
+      responses:
+        '200':
+          description: Owner details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Owners]
+      operationId: updateOwner
+      summary: Replace an owner's editable details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerRequest'
+      responses:
+        '200':
+          description: Owner updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/owners/{ownerId}/pets:
+    parameters:
+      - $ref: '#/components/parameters/OwnerId'
+    post:
+      tags: [Pets]
+      operationId: addPet
+      summary: Add a pet to an owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetRequest'
+      responses:
+        '201':
+          description: Pet created.
+          headers:
+            Location:
+              description: URI of the created pet.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/owners/{ownerId}/pets/{petId}:
+    parameters:
+      - $ref: '#/components/parameters/OwnerId'
+      - $ref: '#/components/parameters/PetId'
+    put:
+      tags: [Pets]
+      operationId: updatePet
+      summary: Update a pet belonging to an owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetUpdateRequest'
+      responses:
+        '200':
+          description: Pet updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/owners/{ownerId}/pets/{petId}/visits:
+    parameters:
+      - $ref: '#/components/parameters/OwnerId'
+      - $ref: '#/components/parameters/PetId'
+    post:
+      tags: [Visits]
+      operationId: bookVisit
+      summary: Book a visit for an owner's pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitRequest'
+      responses:
+        '201':
+          description: Visit booked.
+          headers:
+            Location:
+              description: URI of the created visit.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/pet-types:
+    get:
+      tags: [Pet types]
+      operationId: listPetTypes
+      summary: List available pet types
+      responses:
+        '200':
+          description: Available pet types.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PetType'
+  /api/v1/vets:
+    get:
+      tags: [Veterinarians]
+      operationId: listVeterinarians
+      summary: List veterinarians
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Veterinarians.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VetPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /vets:
+    get:
+      tags: [Veterinarians]
+      operationId: listVeterinariansLegacy
+      summary: Legacy veterinarian resource
+      description: >
+        Compatibility endpoint. The vetList wrapper and its current response behavior
+        remain unchanged; new consumers should use /api/v1/vets.
+      responses:
+        '200':
+          description: Legacy veterinarian list wrapper.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [vetList]
+                properties:
+                  vetList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vet'
+components:
+  parameters:
+    OwnerId:
+      name: ownerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    PetId:
+      name: petId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    LastName:
+      name: lastName
+      in: query
+      required: false
+      description: Prefix to match against owner last names.
+      schema:
+        type: string
+        default: ''
+    Page:
+      name: page
+      in: query
+      required: false
+      description: One-based page number.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      description: Page size, capped at 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 5
+  responses:
+    BadRequest:
+      description: Invalid request or field validation failure.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiProblem'
+    NotFound:
+      description: The requested owner, pet, or visit target does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiProblem'
+    Conflict:
+      description: The operation conflicts with an existing clinic record.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiProblem'
+  schemas:
+    OwnerRequest:
+      type: object
+      additionalProperties: false
+      required: [firstName, lastName, address, city, telephone]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '\S'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '\S'
+        telephone:
+          type: string
+          pattern: '^\d{10}$'
+    Owner:
+      type: object
+      required: [id, firstName, lastName, address, city, telephone, pets]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '\S'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '\S'
+        telephone:
+          type: string
+          pattern: '^\d{10}$'
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+    PetRequest:
+      type: object
+      additionalProperties: false
+      required: [name, birthDate, petTypeId]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        birthDate:
+          type: string
+          format: date
+        petTypeId:
+          type: integer
+          minimum: 1
+    PetUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, birthDate]
+      description: When petTypeId is omitted, the current pet type is retained.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '\S'
+        birthDate:
+          type: string
+          format: date
+        petTypeId:
+          type: integer
+          minimum: 1
+    Pet:
+      type: object
+      required: [id, name, birthDate, type, visits]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        type:
+          $ref: '#/components/schemas/PetType'
+        visits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Visit'
+    VisitRequest:
+      type: object
+      additionalProperties: false
+      required: [date, description]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Must be after the current date.
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: '\S'
+    Visit:
+      type: object
+      required: [id, date, description]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+    PetType:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+    Vet:
+      type: object
+      required: [id, firstName, lastName, specialties]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        firstName:
+          type: string
+        lastName:
+          type: string
+        specialties:
+          type: array
+          items:
+            type: string
+    VetPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Vet'
+    OwnerPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Owner'
+    Page:
+      type: object
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items: {}
+        page:
+          type: integer
+          minimum: 1
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    ApiProblem:
+      type: object
+      description: RFC 9457 Problem Details extended with a stable code and field errors.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'

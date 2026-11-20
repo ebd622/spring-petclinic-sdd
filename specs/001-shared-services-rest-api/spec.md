@@ -10,6 +10,13 @@
 Introduce a shared service layer used by both MVC and API controllers, exposing the same business capabilities through REST endpoints. This will enable a gradual migration to a React, Angular, or other JavaScript frontend.
 The long-term goal is to replace the MVC UI entirely and move to an API-driven architecture without a big-bang rewrite."
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Should the new REST API require authentication, or remain available under the application's existing access policy? → A: Keep the existing access policy; do not introduce a new authentication requirement for the REST API.
+- Q: How should clients select an API version when calling the new REST endpoints? → A: Include the version in the URL.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Continue using the clinic UI (Priority: P1)
@@ -48,21 +55,24 @@ operations without depending on server-rendered pages.
 allows a new frontend to be adopted incrementally.
 
 **Independent Test**: Use an API client to search, create, retrieve, and update owners; add
-and edit pets; book a visit; and retrieve the veterinarian list. Verify saved data and
-validation outcomes match the browser interface.
+and edit pets using available pet types; book a visit; and retrieve the veterinarian list.
+Verify saved data and validation outcomes match the browser interface.
 
 **Acceptance Scenarios**:
 
 1. **Given** clinic records, **When** an API consumer searches for owners, **Then** it can
    retrieve matching owners and their details, including associated pets and visits where
    available.
-2. **Given** valid owner or pet data, **When** an API consumer creates or updates an owner
-   or adds or edits a pet, **Then** the change is saved and reflected in both interfaces.
+2. **Given** valid owner or pet data and the available pet types, **When** an API consumer
+   creates or updates an owner or adds or edits a pet, **Then** the change is saved and
+   reflected in both interfaces.
 3. **Given** a valid visit request for a pet, **When** an API consumer books the visit,
    **Then** it is saved and visible in the browser interface.
 4. **Given** veterinarian records, **When** an API consumer requests the veterinarian
    list, **Then** it receives the available veterinarian information.
-5. **Given** an invalid request or a record that does not exist, **When** an API consumer
+5. **Given** pet types configured for the clinic, **When** an API consumer requests
+   available pet types, **Then** it can use them when adding or editing a pet.
+6. **Given** an invalid request or a record that does not exist, **When** an API consumer
    makes the corresponding request, **Then** it receives a standardized error response
    that identifies the problem without exposing sensitive details.
 
@@ -117,8 +127,8 @@ same clinic records and rules.
   available in those supported workflows; it MUST NOT introduce unsupported operations
   such as deleting clinic records as part of this feature.
 - **FR-003**: The system MUST allow API consumers to search for and retrieve owners,
-  create and update owners, add and edit their pets, book pet visits, and retrieve
-  veterinarians.
+  create and update owners, retrieve available pet types, add and edit their pets, book
+  pet visits, and retrieve veterinarians.
 - **FR-004**: The system MUST apply the same validation rules, domain rules, and
   persistence outcomes to equivalent operations through the browser and API interfaces.
 - **FR-005**: The system MUST preserve existing search, pagination, relationship, and
@@ -126,16 +136,18 @@ same clinic records and rules.
   and visit-date constraints.
 - **FR-006**: The browser and REST interfaces MUST use the same business capabilities so
   that a change made through one interface is visible through the other.
-- **FR-007**: New REST endpoints MUST use explicit API versioning, follow REST conventions,
-  and return standardized error responses for invalid requests, missing records, and
-  unsupported versions. The existing veterinarian data resource remains subject to FR-011.
+- **FR-007**: New REST endpoints MUST include the API version in the URL, follow REST
+  conventions, and return standardized error responses for invalid requests, missing
+  records, and unsupported versions. The existing veterinarian data resource remains
+  subject to FR-011.
 - **FR-008**: The system MUST provide OpenAPI 3 documentation for new REST endpoints and
   document the compatibility behavior of the existing veterinarian data resource. The
   documentation MUST match request, response, validation, and error behavior.
 - **FR-009**: The REST APIs MUST support replacing workflows incrementally; introducing
   the APIs MUST NOT require removal or disabling of the existing browser interface.
 - **FR-010**: API requests MUST follow the application's existing security and
-  configuration boundaries and MUST NOT expose sensitive details in responses.
+  configuration boundaries, MUST NOT introduce a new authentication requirement, and
+  MUST NOT expose sensitive details in responses.
 - **FR-011**: The existing veterinarian data resource MUST remain compatible for current
   consumers while versioned REST endpoints are introduced.
 
@@ -173,7 +185,7 @@ same clinic records and rules.
   operations.
 - JavaScript frontend implementation is not part of this feature; the APIs must enable a
   frontend to be introduced in a later, separately planned change.
-- Authentication and authorization policy remain within the application's existing
-  security boundary; this feature does not independently redefine access policy.
+- Authentication and authorization policy remain unchanged from the application's
+  existing access policy; this feature does not independently redefine access policy.
 - The implementation will introduce the user-requested shared service layer so both
   browser and REST controllers use the same business capabilities.
